@@ -4,8 +4,16 @@ from zenml import step
 from src.model_dev import LinearRegressionModel
 from sklearn.base import RegressorMixin # type: ignore
 from .config import ModelNameConfig
+import mlflow
+from zenml.client import Client
 
-@step
+client = Client()
+client.activate_stack("mlflow_stack")
+stack = client.active_stack
+experiment_tracker = stack.experiment_tracker
+
+
+@step(experiment_tracker=experiment_tracker.name)
 def train_model(
     x_train: pd.DataFrame,
     x_test: pd.DataFrame,
@@ -26,6 +34,7 @@ def train_model(
 
         model = None
         if config.model_name == "LinearRegression":
+            mlflow.sklearn.autolog()
             model = LinearRegressionModel()
             trained_model = model.train(x_train,y_train)
             return trained_model
